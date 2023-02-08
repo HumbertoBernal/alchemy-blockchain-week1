@@ -1,6 +1,6 @@
 import { useState } from "react";
 import server from "./server";
-import { generateSignature } from "./utils";
+import { signMessage } from "./utils";
 
 function Transfer({ address, setBalance, privateKey }) {
   const [sendAmount, setSendAmount] = useState("");
@@ -14,15 +14,19 @@ function Transfer({ address, setBalance, privateKey }) {
     const sender = address;
     const amount = parseInt(sendAmount);
 
-    const signature = await generateSignature(sender, recipient, amount, privateKey)
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' };
+    const dateString = new Date().toLocaleString('es', options).replace(",", "").replace(" ", "T")
+
+    const message =  { amount, recipient }
+    console.log("message", JSON.stringify({...message, dateString }))
+
+    const signature = await signMessage({...message, dateString }, privateKey)
 
     try {
       const {
         data: { balance },
       } = await server.post(`send`, {
-        sender: sender,
-        amount: amount,
-        recipient,
+        message,
         signature
 
       });
