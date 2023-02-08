@@ -1,17 +1,23 @@
 import * as secp from "ethereum-cryptography/secp256k1"
 import { sha256 } from "ethereum-cryptography/sha256";
 import { toHex, utf8ToBytes } from "ethereum-cryptography/utils";
+import { keccak256 } from "ethereum-cryptography/keccak";
 
-export async function generateSignature(sender, recipient, amount, privateKey) {
+export function hashMessage(message){
 
-    const messageHash = toHex(sha256(utf8ToBytes(JSON.stringify({ "from": sender, "to": recipient, "amount": amount })))
-)
-    console.log(messageHash);
+    const messageBytes = utf8ToBytes(JSON.stringify(message))
+    const hash = keccak256(messageBytes)
 
-    const signature = await secp.sign(messageHash, privateKey);
+    return hash
+}
 
-    const hexSignature = toHex(signature);
 
-    return hexSignature;
+export async function signMessage(message, privateKey) {
+    
+    const hash = hashMessage(message);
+    
+    const [signature, recoveryBit] = await secp.sign(hash, privateKey, {recovered: true});
+    const fullSignature = new Uint8Array([recoveryBit, ...signature])
 
+    return toHex(fullSignature);
 }
